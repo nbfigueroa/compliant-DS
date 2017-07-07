@@ -1,0 +1,164 @@
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Extract Segmented Data from tGau-BP-HMM Results
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+clear all; close all; clc;
+load('./mat/proc-data.mat')
+
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Load Results from tGau-BP-HMM
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+load('./results-1/seg-results.mat')
+% Variables needed from tGau-BP-HMM Results
+%   - Robotdata
+%   - bestGauPsi
+%   - bestGauPsiTrans
+%   - groups
+
+% Visualize Segmentation and Sigma-Clustering
+close all; clc;
+[ Segm_results Total_feats Clust_results Clust_feats my_color_map] = GetSegmentationResults(Bimanual_Arm_Data, Act_bestGauPsi, [1:Bimanual_Arm_Data.N], 'Best estimated State Sequences', groups);
+
+%% %%
+% Visualize Segmentation and Sigma-Clustering
+[Bi_Gau_Segm_results Bi_Gau_Total_feats] = plotSegDataNadia(Bimanual_Arm_Data, Act_bestGauPsi, [1:Bimanual_Arm_Data.N], 'Best estimated Gaussian State Sequence', groups);
+
+
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Plot Segmented Trajectories with BP-HMM on 3D Cartesian Space for Active
+% Arm
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Select which sequences to visualize
+seq = [2 3];
+
+Xn_seg_act = {};
+for i=1:length(proc_data)
+    Xn_seg_act{i,1} = proc_data{1,i}.active.X;
+end
+
+Xn_seg_pass = {};
+for i=1:length(proc_data)
+    if i > 1
+        Xn_seg_pass{i,1} = [proc_data{1,i}.passive.X proc_data{1,i}.passive.X(:,end)];
+    else
+        Xn_seg_pass{i,1} = proc_data{1,i}.passive.X;
+    end
+end
+
+Xn_seg_object = {};
+for i=1:length(proc_data)
+        Xn_seg_object{i,1} = proc_data{1,i}.object.feats;
+end
+
+figure('Color',[1 1 1])
+
+% Plot 3D Trajectories of Recordings with Colors Indicating Sequences
+plotSegmentedData( Xn_seg_pass, seq , Total_feats, Segm_results, my_color_map);
+axis tight
+grid on 
+xlabel('x');ylabel('y');zlabel('z');
+
+% Plot 3D Trajectories of Recordings with Colors Indicating Sequences
+plotSegmentedData( Xn_seg_act, seq , Total_feats, Segm_results, my_color_map);
+
+axis tight
+grid on 
+xlabel('x');ylabel('y');zlabel('z');
+title(sprintf('%d Zucchini Peeling Passive-Active Recordings \n(Color Indicates Segments Extracted by BP-HMM)',length(seq)))
+
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Plot Segmented Trajectories with tGau-BP-HMM on 3D Cartesian Space
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Who creates Clust_feats_hack, Clust_results_hack?!
+
+figure('Color',[1 1 1])
+plotSegmentedData( Xn_seg_pass, seq , Clust_feats, Clust_results, []);
+axis tight
+grid on 
+xlabel('x');ylabel('y');zlabel('z');
+
+% Plot 3D Trajectories of Recordings with Colors Indicating Sequences
+plotSegmentedData( Xn_seg_act, seq , Clust_feats, Clust_results, []);
+axis tight
+grid on 
+xlabel('x');ylabel('y');zlabel('z');
+title(sprintf('%d Zucchini Peeling Passive-Active Recordings \n(Color Indicates Segments Extracted by tGau-BP-HMM)',length(seq)))
+
+
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Extract Data from "Clustered-H Sequences"
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+clc; close all;
+
+Xn_obj =  Xn_seg_object;
+Xn_act =  Xn_seg_act;
+Xn_pas = Xn_seg_pass;
+
+object  = [];
+passive = [];
+active  = [];
+for ts = 1:1
+    
+    object{ts,1}  = Xn_obj{ts};
+    passive{ts,1} = Xn_pas{ts};
+    active{ts,1}  = Xn_act{ts};
+    N = length(active);
+    
+    %%% Extract Labels from Clusters
+    Labels = Clust_results{ts,1};
+    current = 1;
+    labels_all = zeros(length(Labels),3);
+    for i=1:length(Labels)
+        labels_all(i,1)  = Labels(i,1);
+        labels_all(i,2)  = current;
+        labels_all(i,3)  = Labels(i,2);
+        current = Labels(i,2)+1;
+    end
+    
+    %%% Generate Labels for each time step
+    ts_labels = zeros(1,N);
+    for i=1:length(Labels)
+        ts_labels(1,labels_all(i, 2):labels_all(i, 3)) = ones(1,labels_all(i, 3)-labels_all(i, 2)+1)*labels_all(i, 1);
+    end
+    
+    object{ts,1} = [object{ts,1}; ts_labels];
+    passive{ts,1} = [passive{ts,1}; ts_labels];
+    active{ts,1} = [active{ts,1}; ts_labels];
+    
+    full = 0;
+    plotLabeledEEData(passive{ts,1}, [], sprintf('Peeling Sequence (Passive Arm): Demo %d',ts), 1);
+    plotLabeledObjectData(object{ts,1}, [], sprintf('Peeling Sequence (Object Features): Demo %d',ts), 1);
+    plotLabeledEEData(active{ts,1}, [], sprintf('Peeling Sequence (Active Arm):  Demo %d',ts), 1);
+       
+    
+end
+
+%% %% Try Power Analysis
+
+data_act  = active{ts};
+pos_act   = data_act(1:3,:);
+vel_act   = [diff(pos_act(1,:));diff(pos_act(1,:));diff(pos_act(1,:))];
+vel_act   = sgolayfilt(vel_act', 3, 151)';
+force_act = data_act(8:10,2:end);
+pow_act   = vel_act.*force_act;
+powd_act   = vel_act'*force_act;
+labels    = data_act(end,:);
+
+plotLabeledEEData(pow_act, [], sprintf('Peeling Sequence (Active Arm):  Demo %d',ts), 0, {'\Omega_x','\Omega_y','\Omega_z'})
+
+%% Plot 3d Power Domain
+
+figure('Color',[1 1 1])
+labels_ids = unique(labels);
+colors = hsv(length(labels_ids));
+colors = [ 0.208 0.1647 0.5255; 0.9725 0.9804 0.05098];
+for i=1:length(pow_act)
+plot3(pow_act(1,i),pow_act(2,i),pow_act(3,i),'.','Color',colors(find(labels(i)== labels_ids),:)); hold on;
+end
+xlabel('\Omega_x');ylabel('\Omega_y');zlabel('\Omega_z');
+title('\Omega Domain of Peeling Demonstrations', )
+grid on;
+axis tight;
+

@@ -1,0 +1,204 @@
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Extract Segmented Data from tGau-BP-HMM Results
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+clear all; close all; clc;
+load('./mat/proc-data.mat')
+
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Load Results from tGau-BP-HMM
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+load('./results-1/seg-results.mat')
+% Variables needed from tGau-BP-HMM Results
+%   - Robotdata
+%   - bestGauPsi
+%   - bestGauPsiTrans
+%   - groups
+
+% Visualize Segmentation and Sigma-Clustering
+close all; clc;
+[ Segm_results Total_feats Clust_results Clust_feats my_color_map] = GetSegmentationResults(Bimanual_Arm_Data, Act_bestGauPsi, [1:Bimanual_Arm_Data.N], 'Best estimated State Sequences', groups);
+
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Plot Segmented Trajectories with BP-HMM on 3D Cartesian Space for Active
+% Arm
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Select which sequences to visualize
+seq = [2 3];
+
+Xn_seg_act = {};
+for i=1:length(proc_data)
+    Xn_seg_act{i,1} = proc_data{1,i}.active.X;
+end
+
+Xn_seg_pass = {};
+for i=1:length(proc_data)
+    if i > 1
+        Xn_seg_pass{i,1} = [proc_data{1,i}.passive.X proc_data{1,i}.passive.X(:,end)];
+    else
+        Xn_seg_pass{i,1} = proc_data{1,i}.passive.X;
+    end
+end
+
+Xn_seg_object = {};
+for i=1:length(proc_data)
+        Xn_seg_object{i,1} = proc_data{1,i}.object.feats;
+end
+
+figure('Color',[1 1 1])
+
+% Plot 3D Trajectories of Recordings with Colors Indicating Sequences
+plotSegmentedData( Xn_seg_pass, seq , Total_feats, Segm_results, my_color_map);
+axis tight
+grid on 
+xlabel('x');ylabel('y');zlabel('z');
+
+% Plot 3D Trajectories of Recordings with Colors Indicating Sequences
+plotSegmentedData( Xn_seg_act, seq , Total_feats, Segm_results, my_color_map);
+
+axis tight
+grid on 
+xlabel('x');ylabel('y');zlabel('z');
+title(sprintf('%d Zucchini Peeling Passive-Active Recordings \n(Color Indicates Segments Extracted by BP-HMM)',length(seq)))
+
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Plot Segmented Trajectories with tGau-BP-HMM on 3D Cartesian Space
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+figure('Color',[1 1 1])
+% plotSegmentedData( Xn_seg_pass, seq , Clust_feats, Clust_results_hack, my_color_map);
+axis tight
+grid on 
+xlabel('x');ylabel('y');zlabel('z');
+
+% Plot 3D Trajectories of Recordings with Colors Indicating Sequences
+plotSegmentedData( Xn_seg_act, seq , Clust_feats, Clust_results, []);
+axis tight
+grid on 
+xlabel('x');ylabel('y');zlabel('z');
+title(sprintf('%d Zucchini Peeling Passive-Active Recordings \n(Color Indicates Segments Extracted by BP-HMM)',length(seq)))
+
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Generate Labels for "Clustered-H Sequences"
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+clc; close all;
+load('./results-1/labeled-data-clust.mat')
+object  = [];
+passive = [];
+active  = [];
+labels  = [];
+for ts = 2:2
+
+    object{ts,1}  = Xn_seg_object{ts};
+    passive{ts,1} = Xn_seg_pass{ts};
+    active{ts,1}  = Xn_seg_act{ts};
+    N = length(active);
+    %%% Extract Labels from Clusters
+    Labels = Clust_result_hack_2{ts-1,1};
+    current = 1;
+    labels_all = zeros(length(Labels),3);
+    for i=1:length(Labels)
+        labels_all(i,1)  = Labels(i,1);
+        labels_all(i,2)  = current;
+        labels_all(i,3)  = Labels(i,2);
+        current = Labels(i,2)+1;
+    end
+    labels{ts,1} = labels_all;
+    %%% Generate Labels for each time step
+    ts_labels = [];
+    for i=1:length(labels_all)
+        ts_labels(1,labels_all(i, 2):labels_all(i, 3)) = ones(1,labels_all(i, 3)-labels_all(i, 2)+1)*labels_all(i, 1);
+    end
+
+    object{ts,1} = [object{ts,1}; ts_labels];
+    passive{ts,1} = [passive{ts,1}; ts_labels];
+    active{ts,1} = [active{ts,1}; ts_labels];
+    
+    
+    plotLabeledEEData(passive{ts,1}, [], sprintf('Peeling Sequence Passive: TS %d',ts), 1);
+    plotLabeledObjectData(object{ts,1}, [], sprintf('Peeling Sequence Object: : TS %d',ts),1);
+    plotLabeledEEData(active{ts,1}, [], sprintf('Peeling Sequence  Active: : TS %d',ts),1);
+    
+end
+
+
+
+
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Generate Labels for "Clustered-H Sequences"
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+clc; close all;
+
+% label ids:
+% 11 - Initial Reach
+% 9  - Reach to Peel
+% 8  - Peel
+% 12 - Rotate & Reach to Peel
+% 13 - Final Retract
+
+action_id = 12;
+ts_action = [];
+act = 0;
+for ts = 1:2
+    labels_  = labels{ts};    
+    active_  = active{ts};
+    passive_ = passive{ts};
+    object_  = object{ts};
+    
+    actions_idx = find(labels_(:,1)==action_id);
+%     
+%     s = 1;
+%     if ts==2
+%         s = 2;
+%     end
+    
+    for i= 1:length(actions_idx)
+        act = act + 1;
+        
+        start_seg = labels_(actions_idx(i),2);
+        end_seg = labels_(actions_idx(i),3);        
+        
+        % Active Arm
+        ts_action{act,1}.active.pos = active_(1:3,start_seg:end_seg);
+        ts_action{act,1}.active.ori = active_(4:7,start_seg:end_seg);
+        ts_action{act,1}.active.for = active_(8:10,start_seg:end_seg);
+        ts_action{act,1}.active.tor = active_(11:13,start_seg:end_seg);
+        
+        % Passive Arm
+        ts_action{act,1}.passive.pos = passive_(1:3,start_seg:end_seg);
+        ts_action{act,1}.passive.ori = passive_(4:7,start_seg:end_seg);
+        ts_action{act,1}.passive.for = passive_(8:10,start_seg:end_seg);
+        ts_action{act,1}.passive.tor = passive_(11:13,start_seg:end_seg);
+        
+        % Object
+        ts_action{act,1}.object.mean = object_(1:3,start_seg:end_seg);
+        ts_action{act,1}.object.std  = object_(4:6,start_seg:end_seg);
+        
+    end    
+    
+end
+
+%% %%% To store Time-Series
+% Initial_reach = ts_action;
+% Reach_to_peel = ts_action;
+% Peel = ts_action;
+% Rotate_reach = ts_action;
+% Final_retract = ts_action;
+
+%% %% Visualize Extracted Time Series %%%%%%%%%
+
+data = Rotate_reach;
+figure('Color',[1 1 1]);
+for i=1:length(data)
+    data_ = data{i};
+    plot3(data_.active.pos(1,:),data_.active.pos(2,:),data_.active.pos(3,:)); hold on;
+end
+xlabel('x');ylabel('y');zlabel('z');
+grid on;
+axis on;
+
+
+
+
+
+

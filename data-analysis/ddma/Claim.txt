@@ -1,0 +1,16 @@
+The codes are shared here for expediating the communication of research results among scientific communities. They can be freely used at your own risk, given that the authors' contributions are appropriatedly cited or acknowledged in your publications. 
+
+References: 
+[1] Yixiang Huang, Xuan F. Zha, Jay Lee, Chengliang Liu. Discriminant Diffusion Maps Analysis: A Robust Manifold Learner For Dimensionality Reduction And Its Applications in machine condition monitoring and fault diagnosis. Mechanical Systems and Signal Processing, 34(1-2), 2013: 277-297. 
+
+
+Note: The codes can only be used for academic purpose. For other purposes, please contact with Yixiang Huang. 
+
+Contact Information: 
+Yixiang Huang
+School of Mechanical Engineering,
+Shanghai Jiao Tong University
+Emails: huang.yixiang@sjtu.edu.cn or david.huangyx@gmail.com 
+
+
+Thanks. 
