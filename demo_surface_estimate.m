@@ -1,21 +1,30 @@
-%% 1) 2D Simulated Dataset from Sina's Toolbox
+%% 1) 2D Simulated Dataset from Sina's CODS Toolbox
+
 
 %% 2) Real 'Dough-Rolling' 12D dataset, 3 Unique Emission models, 12 time-series
 % Demonstration of a Dough Rolling Task consisting of 
 % 15 (13-d) time-series X = {x_1,..,x_T} with variable length T. 
 clc; clear all; close all;
-data_path = '../ICSC-HMM/test-data/'; display = 0; type = 'proc'; full = 0; type2 = 'aligned'; 
-% Type of data processing
-% O: no data manipulation -- 1: zero-mean -- 2: scaled by range * weights
-normalize = 2; 
-
-% Define weights for dimensionality scaling
-weights = [10*ones(1,3) 2*ones(1,4) 1/7*ones(1,3) 1/10*ones(1,3)]';
+data_path = './test-data/'; display = 1; type = 'aligned'; % 'aligned'/'rotated'
+dataset_name = 'Rolling'; full = 0; % 
 
 % Define if using first derivative of pos/orient
-use_vel = 1;
-[data, TruePsi, Data, True_states, Data_] = load_rolling_dataset( data_path, type, type2, display, full, normalize, weights, use_vel);
-dataset_name = 'Rolling'; 
+[Data, True_states] = load_rolling_demos( data_path, type, display, full);
+
+%% Position to Velocities
+% Convert positions to velocities
+if ~isempty(varargin)
+    if varargin{2}==1
+        for i=1:length(Data)
+            clear X3d            
+            X3d(1:3,:) = Data{i}(1:3,:);
+            X3d_dot = [zeros(3,1) diff(X3d')'];
+            % Smoothed out with savitksy golay filter
+            X3d_dot = 100*sgolayfilt(X3d_dot', 3, 151)';
+            Data{i}(1:3,:) = X3d_dot;
+        end
+    end
+end      
 
 %% 3) Real 'Peeling' (max) 32-D dataset, 5 Unique Emission models, 3 time-series
 % Demonstration of a Bimanual Peeling Task consisting of 
@@ -81,6 +90,6 @@ colormap bone
 %% Plot Segmentated 3D Trajectories
 titlename = strcat(dataset_name,' Demonstrations (Ground Truth)');
 if exist('h7','var') && isvalid(h7), delete(h7);end
-h7 = plotLabeled3DTrajectories(Data_, True_states, titlename, unique(data.zTrueAll));
+h7 = plotLabeled3DTrajectories(Data, True_states, titlename, unique(data.zTrueAll));
 axis tight
 
