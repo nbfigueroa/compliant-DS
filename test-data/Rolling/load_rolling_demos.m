@@ -28,7 +28,11 @@ for i=1:length(demos)
     true_states = True_states{i};
     for k = 1:size(Seq{demos(i)},1)  
         ids = segs(k,1):segs(k,2);
-        Data_seq{j} = X(:,ids)';
+        X_ = X(:,ids);
+        X_n =  X_;
+        X_n(9,:) =  -X_(8,:);
+        X_n(8,:) =  -X_(9,:);
+        Data_seq{j} = X_n';
         True_states_seq{j} = true_states(1,ids)';
         j = j + 1;
     end
