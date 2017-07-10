@@ -1,81 +1,37 @@
-function [Data True_states] = load_rolling_demos( data_path, type, display, full)
+function [Data_seq True_states_seq] = load_rolling_demos( data_path, type, demos, labels, display)
 
-label_range = [1 2 3];
-        
+% Load Data
 switch type
     case 'aligned'
-        load(strcat(data_path,'Rolling/proc-data-labeled-aligned.mat'))
+        load(strcat(data_path,'Rolling/proc-data-labeled-aligned.mat'))        
     case 'real'
         load(strcat(data_path,'Rolling/proc-data-labeled-real.mat'))
 end
        
+% Load label sequences
+switch labels
+    case 'human'
+        load(strcat(data_path,'Rolling/Sequence_labels.mat'))
+        
+    case 'icsc-hmm'
+end
+% Extract rolling sequences from selected demonstrations
+Data_  = Data; True_states_ = True_states;
+clear Data True_states
 
-if full == 1 % Load the 15 time-series
-    
-    if display == 1
-        ts = [1:5];
-        figure('Color',[1 1 1])
-        for i=1:length(ts)
-            X = Data{ts(i)};
-            true_states = True_states{ts(i)};
-            
-            % Plot time-series with true labels
-            subplot(length(ts),1,i);
-            data_labeled = [X ; true_states];
-            plotLabeledData( data_labeled, [], strcat('Time-Series (', num2str(ts(i)),') with true labels'), [], label_range)
-        end
-        
-        
-        figure('Color',[1 1 1])
-        ts = [6:10];
-        for i=1:length(ts)
-            X = Data{ts(i)};
-            true_states = True_states{ts(i)};
-            
-            % Plot time-series with true labels
-            subplot(length(ts),1,i);
-            data_labeled = [X ; true_states];
-            plotLabeledData( data_labeled, [], strcat('Time-Series (', num2str(ts(i)),') with true labels'), [], label_range)
-        end
-        
-        figure('Color',[1 1 1])
-        ts = [11:15];
-        for i=1:length(ts)
-            X = Data{ts(i)};
-            true_states = True_states{ts(i)};
-            
-            % Plot time-series with true labels
-            subplot(length(ts),1,i);
-            data_labeled = [X ; true_states];
-            plotLabeledData( data_labeled, [], strcat('Time-Series (', num2str(ts(i)),') with true labels'), [], label_range)
-        end
+Total_sequences = 0; j = 1;
+for i=1:length(demos)
+    Data{i} = Data_{i};
+    True_states{i} = True_states_{i};
+    Total_sequences = Total_sequences + size(Seq{demos(i)},1);
+    X = Data{i}; segs = Seq{demos(i)};
+    true_states = True_states{i};
+    for k = 1:size(Seq{demos(i)},1)  
+        ids = segs(k,1):segs(k,2);
+        Data_seq{j} = X(:,ids)';
+        True_states_seq{j} = true_states(1,ids)';
+        j = j + 1;
     end
-else % Load 5 time-series
-
-    Data_ = Data; True_states_ = True_states;
-    clear Data True_states
-    iter = 1;
-%     for i=1:2:12
-    for i=2:2:10
-        Data{iter} = Data_{i};
-        True_states{iter} = True_states_{i};
-        iter = iter + 1;
-    end
-    
-    if display == 1
-        ts = [1:length(Data)];
-        figure('Color',[1 1 1])
-        for i=1:length(ts)
-            X = Data{ts(i)};
-            true_states = True_states{ts(i)};
-            
-            % Plot time-series with true labels
-            subplot(length(ts),1,i);
-            data_labeled = [X ; true_states];
-            plotLabeledData( data_labeled, [], strcat('Time-Series (', num2str(ts(i)),') with true labels'), [], label_range)
-        end
-    end
-    
 end
 
 

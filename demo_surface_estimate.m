@@ -6,10 +6,10 @@
 % 15 (13-d) time-series X = {x_1,..,x_T} with variable length T. 
 clc; clear all; close all;
 data_path = './test-data/'; display = 1; type = 'aligned'; % 'aligned'/'rotated'
-dataset_name = 'Rolling'; full = 0; % 
+dataset_name = 'Rolling'; demos = [1:3]; labels = 'human'% 'human'/'icsc-hmm'; 
 
 % Define if using first derivative of pos/orient
-[Data, True_states] = load_rolling_demos( data_path, type, display, full);
+[Data, True_states] = load_rolling_demos( data_path, type, demos, labels, display);
 
 %% Position to Velocities
 % Convert positions to velocities
@@ -90,6 +90,6 @@ colormap bone
 %% Plot Segmentated 3D Trajectories
 titlename = strcat(dataset_name,' Demonstrations (Ground Truth)');
 if exist('h7','var') && isvalid(h7), delete(h7);end
-h7 = plotLabeled3DTrajectories(Data, True_states, titlename, unique(data.zTrueAll));
+h7 = plotLabeled3DTrajectories(Data, True_states, titlename, [1 2 3]);
 axis tight
 
