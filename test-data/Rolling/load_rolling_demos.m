@@ -1,4 +1,4 @@
-function [Data_seq True_states_seq] = load_rolling_demos( data_path, type, demos, labels, display)
+function [Data_seq True_states_seq] = load_rolling_demos( data_path, type, demos, labels)
 
 % Load Data
 switch type

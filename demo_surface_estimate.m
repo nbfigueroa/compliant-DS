@@ -5,26 +5,61 @@
 % Demonstration of a Dough Rolling Task consisting of 
 % 15 (13-d) time-series X = {x_1,..,x_T} with variable length T. 
 clc; clear all; close all;
-data_path = './test-data/'; display = 1; type = 'aligned'; % 'aligned'/'rotated'
-dataset_name = 'Rolling'; demos = [1:3]; labels = 'human'% 'human'/'icsc-hmm'; 
+data_path = './test-data/'; type = 'aligned'; % 'aligned'/'rotated'
+dataset_name = 'Rolling'; demos = [1:2]; labels = 'human'; % 'human'/'icsc-hmm'; 
 
 % Define if using first derivative of pos/orient
-[Data, True_states] = load_rolling_demos( data_path, type, demos, labels, display);
+[Data, True_states] = load_rolling_demos( data_path, type, demos, labels);
+label_range = [1:3];
 
-%% Position to Velocities
+% Plot Segmentated 3D Trajectories
+titlename = strcat(dataset_name,' Demonstrations (',labels,')');
+if exist('h7','var') && isvalid(h7), delete(h7);end
+h7 = plotLabeled3DTrajectories(Data, True_states, titlename, label_range);
+axis tight
+
+%% Compute more features for Data Analysis
+demo_id = 1;
+data    = Data{demo_id}';
+phases  = True_states{demo_id}(1:end-1)';
+
 % Convert positions to velocities
-if ~isempty(varargin)
-    if varargin{2}==1
-        for i=1:length(Data)
-            clear X3d            
-            X3d(1:3,:) = Data{i}(1:3,:);
-            X3d_dot = [zeros(3,1) diff(X3d')'];
-            % Smoothed out with savitksy golay filter
-            X3d_dot = 100*sgolayfilt(X3d_dot', 3, 151)';
-            Data{i}(1:3,:) = X3d_dot;
-        end
-    end
-end      
+position    = data(1:3,1:end-2);
+velocity   = [diff(position(1,:));diff(position(2,:));diff(position(3,:))];
+velocity   = sgolayfilt(velocity', 3, 151)';
+
+% Convert positions to velocities
+forces     = data(8:10,1:end-1);
+
+% Sample
+sample = 20;
+
+% Plot original data
+plot_options              = [];
+plot_options.is_eig       = false;
+plot_options.labels       = phases(1:sample:end);
+plot_options.points_size  = 10;
+plot_options.class_names  = {'Reach', 'Roll','Back'};
+plot_options.title        = 'Position Domain  Rolling Demonstrations';
+
+if exist('h1','var') && isvalid(h1), delete(h1);end
+h1 = ml_plot_data(position(:,1:sample:end)',plot_options);
+hold on;
+
+% Plot velocities
+X = position(1,1:sample:end)'; Y = position(2,1:sample:end)'; Z = position(3,1:sample:end)';
+U = velocity(1,1:sample:end)'; V = velocity(2,1:sample:end)'; W = velocity(3,1:sample:end)';
+quiver3(X,Y,Z,U,zeros(size(U)),zeros(size(U)),'color',[0,0,1],'linewidth',.25); hold on;
+quiver3(X,Y,Z,zeros(size(U)),V,zeros(size(U)),'color',[0,0,1],'linewidth',.25); hold on;
+quiver3(X,Y,Z,zeros(size(U)),zeros(size(U)),W,'color',[0,0,1],'linewidth',.25); hold on;
+quiver3(X,Y,Z,U,V,W,'color',[0,1,1],'linewidth',.25); hold on;
+
+% Plot forces
+Fx = forces(1,1:sample:end)'; Fy = forces(2,1:sample:end)'; Fz = forces(3,1:sample:end)';
+quiver3(X,Y,Z,Fx,zeros(size(Fx)),zeros(size(Fx)),'color',[1,0,0],'linewidth',.25); hold on;
+quiver3(X,Y,Z,zeros(size(Fx)),Fy,zeros(size(Fx)),'color',[1,0,0],'linewidth',.25); hold on;
+quiver3(X,Y,Z,zeros(size(Fz)),zeros(size(Fz)),Fz,'color',[1,0,0],'linewidth',.25);
+quiver3(X,Y,Z,Fx,Fy,Fz,'color',[0,1,1],'linewidth',.25); hold on;
 
 %% 3) Real 'Peeling' (max) 32-D dataset, 5 Unique Emission models, 3 time-series
 % Demonstration of a Bimanual Peeling Task consisting of 
@@ -55,41 +90,6 @@ use_vel = 0;
 [data, TruePsi, Data, True_states, Data_] = load_peeling_dataset( data_path, dim, display, normalize, weights, use_vel);
 dataset_name = 'Peeling';
 
-%% Extract most likely sequence
-Trans_M = eye(3);
-seq_1 = True_states{1};
-figure('Color',[1 1 1]);
-stairs(1:length(seq_1),seq_1, 'LineWidth',3);
-grid on;
-xlabel('Time steps');ylabel('state')
-xlim([1 length(seq_1)])
 
-% Unique labels
-string_seq1 = [];
-string_seq1 = [string_seq1 seq_1(1)]; j = 1;
-for i=2:length(seq_1)
-    if string_seq1(j) ~= seq_1(i)
-        string_seq1 = [string_seq1 seq_1(i)];
-        j = j +1 ;
-    end
-end
 
-% Compute 'Binary' Correlation Matrix
-M = zeros(length(string_seq1),length(string_seq1));
-for i=1:length(string_seq1)
-    for j=1:length(string_seq1)
-        if string_seq1(i) == string_seq1(j)
-            M(i,j) = 1;
-        end
-    end
-end
-figure('Color',[1 1 1])
-imagesc(M);
-colormap bone
-
-%% Plot Segmentated 3D Trajectories
-titlename = strcat(dataset_name,' Demonstrations (Ground Truth)');
-if exist('h7','var') && isvalid(h7), delete(h7);end
-h7 = plotLabeled3DTrajectories(Data, True_states, titlename, [1 2 3]);
-axis tight
 
