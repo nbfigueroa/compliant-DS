@@ -28,9 +28,16 @@ for i=1:length(demos)
     X = Data{i}; segs = Seq{demos(i)};    
     true_states = True_states{i};
     for k = 1:size(Seq{demos(i)},1)  
-        ids = segs(k,1):segs(k,2);
-        Data_seq{j} = X(ids,:);
-        True_states_seq{j} = true_states(ids)';
+        ids = segs(k,1):segs(k,2);                
+        X_ = X(ids,:);        
+        
+        % Rotate around X to get correct force directions
+        for ii=1:length(X_)
+            f = X_(ii,8:10)';            
+            X_(ii,8:10) = [rotx(pi)*f]';
+        end
+        Data_seq{j} = X_;        
+        True_states_seq{j} = true_states(ids);
         j = j + 1;
     end
 end

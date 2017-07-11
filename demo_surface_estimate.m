@@ -61,21 +61,21 @@ axis tight
 %%     Data Analysis for physically-inspired discretization
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Compute more features for Data Analysis
-demo_id = 3;
+demo_id = 10;
 data    = Data{demo_id}';
 phases  = True_states{demo_id}(1:end-2)';
 
 % Convert positions to velocities
 position    = data(1:3,1:end-1);
-velocity   = [diff(position(1,:));diff(position(2,:));diff(position(3,:))];
-velocity   = sgolayfilt(velocity', 3, 151)';
+velocity    = [diff(position(1,:));diff(position(2,:));diff(position(3,:))];
+velocity    = sgolayfilt(velocity', 3, 151)';
 position    = data(1:3,1:end-2);
 
 % Convert positions to velocities
 forces     = data(8:10,1:end-2);
 
 % Sample
-sample = 20;
+sample = 1;
 
 % Plot original data
 plot_options              = [];
