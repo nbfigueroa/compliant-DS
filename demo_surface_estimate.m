@@ -61,7 +61,7 @@ axis tight
 %%     Data Analysis for physically-inspired discretization
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Compute more features for Data Analysis
-demo_id = 10;
+demo_id = 3;
 data    = Data{demo_id}';
 phases  = True_states{demo_id}(1:end-2)';
 
