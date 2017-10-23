@@ -1,19 +1,22 @@
-function h = plot_ds_model(fig, ds, target, limits)
+function h = plot_ds_model(fig, ds, target, limits, varargin)
 
-% quality='low';
-% 
-% if strcmpi(quality,'high')
-%     nx=600;
-%     ny=600;
-% elseif strcmpi(quality,'medium')
-%     nx=400;
-%     ny=400;
-% else
+quality='low';
+
+if nargin > 4
+    quality = varargin{1};
+end
+
+if strcmpi(quality,'high')
+    nx=400;
+    ny=400;
+elseif strcmpi(quality,'medium')
+    nx=200;
+    ny=200;
+else
     nx=20;
     ny=20;
-% end
+end
 
-% axlim = [get(gca,'Xlim'), get(gca, 'Ylim')];
 axlim = limits;
 ax_x=linspace(axlim(1),axlim(2),nx); %computing the mesh points along each axis
 ax_y=linspace(axlim(3),axlim(4),ny); %computing the mesh points along each axis

@@ -60,6 +60,7 @@ while( (get(stop_btn, 'UserData') == 1));
         set(fig,'Pointer','circle');
     end
 end
+delete(stop_btn)
 n_demonstrations = demonstration_index_monitor;
 
 %% Savitzky-Golay filter and derivatives
@@ -119,7 +120,7 @@ function ret = record_current_point(~,~)
     x = x(1,1:2)';
     x = [x;toc];
     X = [X, x];
-    hp = [hp, plot(x(1),x(2),'r.','markersize',20)];
+    hp = [hp, plot(x(1),x(2),'r.','markersize',10)];
 end
 end
 

@@ -5,6 +5,7 @@ vel     = feval(original_dynamics, query_pos);
 dim     = size(vel,1);
 samples = size(vel,2);
 
+% Compute Activation Values
 h_x     = feval(exp_funct, query_pos');
 switch mod_type   
     case 'rand'
