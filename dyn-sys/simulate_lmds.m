@@ -1,41 +1,76 @@
 function [ fig1, reshaped_ds, Data ] = simulate_lmds(ds_type, target, mod_type, limits, varargin)
 
+plot_data = 1;
+
 % If robot figure, take figure handle
 if nargin > 4
     fig1 = varargin{1};
+    alpha = varargin{2};
+    
+    if length(varargin) > 2
+        plot_data = 0;
+        Data = varargin{3};
+    end
+            
 else
     fig1 = figure('Color',[1 1 1]);
+    alpha = [];
 end
+
+% set(hfig,'WindowButtonDownFcn',@(h,e)button_clicked(h,e));
+% set(hfig,'WindowButtonUpFcn',[]);
+% set(hfig,'WindowButtonMotionFcn',[]);
+% hp = gobjects(0);
+
+reshape_btn = uicontrol('Position',[100 20 110 25],'String','Reshape',...
+              'Callback','uiresume(gcbf)');
 
 if ((ds_type > 3) & (ds_type < 5))
     target = [0 0]';
     display('no target');
 end
 
-% Construct and plot chosen Linear DS
-ds_lin = @(x) lin_ds(target, x, ds_type);
-hs = plot_ds_model(fig1, ds_lin, target, limits,'high'); hold on;
-% axis tight
-title('Original Linear Dynamics $\dot{x}=f_o(x)$', 'Interpreter','LaTex')
-   
-switch mod_type
+% Plot Attractor
+scatter(target(1),target(2),50,[0 0 0],'+'); hold on;
 
-    case 'data'        
-        data = draw_mouse_data_on_DS(fig1, limits);
-        Data = [];
-        for l=1:length(data)
-            Data = [Data data{l}];
+% Construct and plot chosen Linear DS
+if ds_type < 10
+    ds_lin = @(x) lin_ds(target, x, ds_type, alpha);
+    hs = plot_ds_model(fig1, ds_lin, target, limits,'high'); hold on;
+    % axis tight
+    title('Original Linear Dynamics $\dot{x}=f_o(x)$', 'Interpreter','LaTex')
+end
+switch mod_type
+    case 'data'       
+        if plot_data
+            data = draw_mouse_data_on_DS(fig1, limits);
+            Data = [];
+            for l=1:length(data)
+                Data = [Data data{l}];
+            end
+        else           
+            plot(Data(1,:),Data(2,:),'r.','markersize',10); hold on;
         end
-        display('Press Enter to Reshape DS')
-        pause;
+        
+        if ds_type >= 10
+            xi_0 = Data(1:2,1);
+            ds_lin = @(x) lin_ds(target, x, ds_type, alpha, xi_0);
+            hs = plot_ds_model(fig1, ds_lin, target, limits,'high'); hold on;
+            % axis tight
+            title('Original Linear Dynamics $\dot{x}=f_o(x)$', 'Interpreter','LaTex')
+        end                
+        
+        display('Press Button to Reshape DS')
+        uiwait(gcf); 
         
         % Reshape 'Original Dynamics with GP-MDS'
         % hyper-parameters for gaussian process        
         % these can be learned from data but we will use predetermined values here
         ell = 0.15; % lengthscale. bigger lengthscale => smoother, less precise ds
+%         ell = 0.05; % lengthscale. bigger lengthscale => smoother, less precise ds
         sf = 0.2; % signal variance
         sn = 0.2; % measurement noise        
-        thres = 0.05;
+        thres = 0.005;
         
         % we pack the hyper paramters in logarithmic form in a structure
         hyp.cov = log([ell; sf]);
@@ -74,9 +109,9 @@ switch mod_type
         
         % Define our reshaped dynamics
         reshaped_ds = @(x) lmds_2d(ds_lin, exp_funct, mod_type, x);
-        display('Press Enter to Reshape DS')
-        pause;
-        
+        display('Press Button to Reshape DS')
+        uiwait(gcf); 
+          
         % Delete lin DS model
         delete(hs)
         
@@ -94,17 +129,42 @@ switch mod_type
         
         % Define our reshaped dynamics
         reshaped_ds = @(x) lmds_2d(ds_lin, exp_funct, mod_type, x);
-        display('Press Enter to Reshape DS')
-        pause;
+        display('Press Button to Reshape DS')
+        uiwait(gcf); 
         
         % Delete lin DS model
-        delete(hs)
+        delete(hs)        
+        
+    case 'none'
+        if plot_data
+            data = draw_mouse_data_on_DS(fig1, limits);
+            Data = [];
+            for l=1:length(data)
+                Data = [Data data{l}];
+            end
+        else
+            plot(Data(1,:),Data(2,:),'r.','markersize',10); hold on;
+        end
+        
+        if ds_type >= 10
+            xi_0 = Data(1:2,1);
+            ds_lin = @(x) lin_ds(target, x, ds_type, alpha, xi_0);
+            hs = plot_ds_model(fig1, ds_lin, target, limits,'high'); hold on;
+            % axis tight
+            title('Original Linear Dynamics $\dot{x}=f_o(x)$', 'Interpreter','LaTex')
+        end
+        
+        % Define our reshaped dynamics
+        reshaped_ds = ds_lin;
         
 end
 % Plot Reshaped dynamics
-hs = plot_ds_model(fig1, reshaped_ds, target, limits, 'high'); 
-title('Reshaped Dynamics $\dot{x}=f(x)=M(x)f_o(x)$ ', 'Interpreter','LaTex')
-display('Reshaping Done.');
+if ~strcmp(mod_type,'none')
+    hs = plot_ds_model(fig1, reshaped_ds, target, limits, 'high');
+    title('Reshaped Dynamics $\dot{x}=f(x)=M(x)f_o(x)$ ', 'Interpreter','LaTex')
+    display('Reshaping Done.');
+end
 
+delete(reshape_btn)
 end
 

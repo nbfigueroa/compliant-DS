@@ -52,7 +52,7 @@ clear options;
 nb_gaussians = 4;
 options.objective = 'mse';    % 'likelihood'
 options.tol_mat_bias = 10^-6; % A very small positive scalar to avoid
-                              % instabilities in Gaussian kernel [default: 10^-1                             
+                              % instabilities in Gaussian kernel [default: 10^-1]                             
 options.display = 1;          % An option to control whether the algorithm
                               % displays the output of each iterations [default: true]                            
 options.tol_stopping=10^-6;   % A small positive scalar defining the stoppping

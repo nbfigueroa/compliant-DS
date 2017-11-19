@@ -7,6 +7,7 @@ ht = [];
 
 global pertForce;
 pertForce = [0;0];
+maxPert = [0;0];
 
 % % Perturb in X direction      
 % pertbFx_btn = uicontrol('style','pushbutton','String', 'Perturb F_x','Callback',@startPerturbation_Fx, ...
@@ -20,7 +21,7 @@ pertForce = [0;0];
 
 % Variable for Plotting Damping Matrix
 i = 1;
-mod_step = 10;
+mod_step = 20;
 color = [ 0.6 0.4 0.6 ];
 
 while(1)
@@ -45,10 +46,9 @@ while(1)
     
     % Compute Damping Matrix
     Q = findDampingBasis(xd_ref);
-%     L = [8 0;0 2];     % inverse
-%     L = [2 0;0 8];   % icra-lfd-tutorial
-    L = [1 0;0 2];   % icra-lfd-tutorial
-%     L = [5 0;0 25];  % klas's thesis
+    L = [2 0;0 8];     % inverse
+%     L = [8 0;0 10];     % inverse
+%     L = [4 0;0 4];   % icra-lfd-tutorial
     D = Q*L*Q';
     
     % Plot Damping Matrix
@@ -87,6 +87,7 @@ while(1)
 
 end
 
+maxPert
 
     %% Perturbations with the mouse
     function startPerturbation(~,~)
@@ -112,7 +113,10 @@ end
             x_p = x_p(1,1:2)';
             motionData = [motionData, x_p];
             pertForce = 20*(motionData(:,end)-motionData(:,1));
-            norm_pertForce = norm(pertForce)
+            norm_pertForce = norm(pertForce);            
+            if norm_pertForce > norm(maxPert)
+                maxPert = pertForce;
+            end
             ret=1;
             delete(hand2)
             hand2 = plot([motionData(1,1),motionData(1,end)],[motionData(2,1),motionData(2,end)],'-r');

@@ -28,3 +28,34 @@ sld_options.weights = ones(1,size(data,2));  % Weights for each sample
 
 [A, b] = estimate_stable_lds(data, sld_options);
 ds_sld = @(x) lin_ds(A,b,x);
+
+
+%% Simulate Passive DS Controller
+dt = 0.005;
+% Setting robot to starting point
+disp('Select a starting point for the simulation...')
+disp('Once the simulation starts you can perturb the robot with the mouse to get an idea of its compliance.')
+try
+    xs = get_point(fig1) - base;
+    % Another option (Start around demonstrations) :
+    % xs  =  Data(1:2,1) - base + 0.15*randn(1,2)'
+    qs = simple_robot_ikin(robot, xs);
+    robot.animate(qs);
+catch
+    disp('could not find joint space configuration. Please choose another point in the workspace.')
+end
+
+% Run Simulation
+[hd, hx] = simulation_passive_control(fig1, robot, base, reshaped_ds, target, qs, dt);
+
+%% Check Feasibility of Demonstrations
+for i=1:length(Data)
+    try
+        xi  =  Data(1:2,i) - base;
+        qi = simple_robot_ikin(robot, xi);
+        robot.delay = realmin;
+        robot.animate(qi);
+    catch
+        disp('could not find joint space configuration. Please choose another point in the workspace.')
+    end
+end

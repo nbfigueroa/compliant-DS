@@ -3,7 +3,7 @@
 
 % Inputs to the function
 % Choose initial linear DS parameters
-ds_type = 4;          % 1: lin DS converging to origin, 2: DS diverging from origin, 
+ds_type = 1;          % 1: lin DS converging to origin, 2: DS diverging from origin, 
                       % 3: vector field in x, 4: vector field in y, 5: curve
                       % 6,7: diag/target 1/2, 8,9: converg curves 1/2
 target = [0 0]';      % Target of DS

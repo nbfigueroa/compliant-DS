@@ -9,9 +9,15 @@ function data = draw_mouse_data_on_DS(fig, limits, varargin)
 %   # Email: jrmout@gmail.com
 
 %
-struct_output = false;
-if nargin>1
-    struct_output = true;
+% struct_output = false;
+% if nargin>2
+%     struct_output = true;
+% end
+
+struct_output = true;
+delete_trace = 0;
+if nargin>2
+    delete_trace = varargin{1};
 end
 
 %% Drawing plot
@@ -21,7 +27,6 @@ end
 disp('Draw some trajectories with the mouse on the figure.')
 
 axis(limits);
-delete_trace = 0;
 
 % to store the data
 X = [];
@@ -44,9 +49,16 @@ set(fig,'WindowButtonUpFcn',[]);
 set(fig,'WindowButtonMotionFcn',[]);
 set(fig,'Pointer','circle');
 hp = gobjects(0);
+% Stop recording
 stop_btn = uicontrol('style','pushbutton','String', 'stop recording','Callback',@stop_recording, ...
-          'position',[0 0 110 25], ...
+          'position',[100 20 110 25], ...
           'UserData', 1);
+      
+% Clear button
+clear_btn = uicontrol('style','pushbutton','String', 'clear data','Callback',@clear_data, ...
+          'position',[220 20 110 25], ...
+'UserData', 1);        
+      
 % wait until demonstration is finished
 while( (get(stop_btn, 'UserData') == 1));
     pause(0.01);
@@ -61,6 +73,7 @@ while( (get(stop_btn, 'UserData') == 1));
     end
 end
 delete(stop_btn)
+delete(clear_btn)
 n_demonstrations = demonstration_index_monitor;
 
 %% Savitzky-Golay filter and derivatives
@@ -89,6 +102,16 @@ return
 function stop_recording(ObjectS, ~)
     set(ObjectS, 'UserData', 0);
 end
+
+% Clear data button function
+function clear_data(ObjectS, ~)
+    data = [];
+    X = [];
+    label_id = 1;
+    cleared_data = demonstration_index;
+    set(ObjectS, 'UserData', 0); % unclick button
+    delete(hp);
+end    
 
 function ret = button_clicked(~,~)
     if(strcmp(get(gcf,'SelectionType'),'normal'));

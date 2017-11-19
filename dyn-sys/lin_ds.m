@@ -1,4 +1,10 @@
-function [x_dot] = lin_ds(b,x,type)
+function [x_dot] = lin_ds(b,x,type,alpha,varargin)
+if nargin > 4
+    xi_0 = varargin{1};
+else
+    xi_0 = [-2;0.2];
+end
+
 switch type
     case 1
     % Linear DS converging to a target
@@ -40,15 +46,28 @@ switch type
     
     case 10
     % Linear DS sim. ref lin. traj. with target as eig -> lambda -1
-     x_0 = [-2;0.2];
      y1 = 1;
-     y2 = -x_0(1)/x_0(2);
+     y2 = -xi_0(1)/xi_0(2);
      y = [y1;y2];    
-     Q = [y./norm(y),x_0./norm(x_0)];
+     Q = [y./norm(y),xi_0./norm(xi_0)];
      L = [-10 0 ; 0 -1];
-     A = Q*L*Q';          
+     A = Q*L*Q';               
+     
+    case 11
+     % Linear DS converging to a target
+     A1 = -[10 0;0 10];
+     
+     % Linear DS sim. ref lin. traj. with target as eig -> lambda -1
+     y1 = 1;
+     y2 = -xi_0(1)/xi_0(2);
+     y = [y1;y2];    
+     Q = [y./norm(y),xi_0./norm(xi_0)];
+     L = [-10 0 ; 0 -1];
+     A2 = Q*L*Q';          
+        
+     A = alpha*A1 + (1-alpha)*A2;
 end
- 
+
 x_dot = A*x;
 
 % if (type>4) || (type < 3) 

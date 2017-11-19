@@ -1,6 +1,6 @@
 function h = plot_ds_model(fig, ds, target, limits, varargin)
 
-quality='low';
+quality='medium';
 
 if nargin > 4
     quality = varargin{1};
