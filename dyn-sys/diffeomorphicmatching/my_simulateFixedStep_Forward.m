@@ -1,4 +1,4 @@
-function [ PhiXsol, Xsol ] = simulateFixedStep_Forward( PhiX, ftauJ, X0, varargin )
+function [ PhiXsol, Xsol ] = my_simulateFixedStep_Forward( PhiX, ftauJ, X0, A )
 %% Simulate the resulting movement
 
 [dim,lX] = size(X0);
@@ -13,24 +13,6 @@ epsilonTarg_2 = epsilonTarg^2;
 stepSize = mean(sqrt(sum( diff(PhiX,[],2).^2,1)))*(size(PhiX,2))/maxStep*stepSizeFac;
 epsilonTarg1 = epsilonPhi*sqrt(mean(sum(X0.^2,1)));
 epsilonTarg1_2 = epsilonTarg1^2;
-
-% Converging linear Compliant DS
-% A_c tracking Linear DS 
-Y0 = PhiX(:,1);
-Y0 = Y0./norm(Y0);
-XZ0 = null(Y0).';
-R0 = [Y0;XZ0].';
-A = R0*EIG0*R0.';
-
-% Tracking linear Compliant DS
-% A_t tracking Linear DS 
-y1 = 1;
-y2 = -Y0(1)/Y0(2);
-y = [y1;y2];
-Q = [y./norm(y),Y0./norm(Y0)];
-L = [-20 0 ; 0 -1];
-A = Q*L*Q';
-
 
 phiZero = PhiX(:,end);
 fDyn = @(X) getDX(A, ftauJ, X, phiZero, stepSize, epsilonTarg_2, dim, lX, 0);

@@ -1,28 +1,26 @@
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Demo for testing Diffeomorphic Matching for DS learning algo (Perrin)    %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Load a Demonstration from LASADATASET
 clear all; close all;
 %All Lasa-shapes except multidemonstration examples
 dataset_dir = '../../LASADataset/DataSet/';
 allShapes = dir(dataset_dir);
 allShapes(1:2) = [];
-% Load data 
-close all; clc; 
-f = 14; % <== Choose dataset from LASADASET
-thisFile = allShapes(f).name;
-load([dataset_dir, thisFile]);
-use_demos = [1]; %Use only the demos with the appearing here; Use all if empty
-if isempty(use_demos)
-    use_demos = 1:length(demos);
-end
-fprintf('*** Loaded demonstrations from %s ***\n', allShapes(f).name);
+figName = 'LASADataset/';
+suffix = '';
+allOptions = {};
+mkdir(figName);
 
-%% Draw Demonstration from Mouse Data
-% ...
+%Options concerning th simulation
+%Set eigenvalues here
+%'EIG0' defines the linear system. EIG0(2,2) specifies the convergence rate
+%in the orthogonal direction
+maxStep = 1001;
+optsSim = {'maxStep', num2str(maxStep), 'stepSizeFac',' 1', 'EIG0', '-diag([1,1.5])','offsetEnd', '[0;0]' }; 
 
-%% Some options
+%Other options
 step_demos = 1; %Step the points
+use_demos = [1]; %Use only the demos with the appearing here; Use all if empty
 doNormalize = 1; %Normalize the demos using the variance in each direction; This works better in general
 
 %Options concerning the transformation
@@ -32,6 +30,15 @@ else
     optsSearch = {'maxCoef', '5', 'nb_iteration','150', 'regularise', '1e-3', 'conv_crit', '1e-6', 'division_coefList', '[3,3,2.5,2.0,1.5,1.1,1.1]', 'safeCoeffList', '0.55*[1, 1, 1, 1, 1, 1, 1]', 'doPlot', '0'};
 end
 
+% Load data 
+close all; clc; 
+f = 14; % <== Choose dataset from LASADASET
+thisFile = allShapes(f).name;
+load([dataset_dir, thisFile]);
+if isempty(use_demos)
+    use_demos = 1:length(demos);
+end
+fprintf('*** Loaded demonstrations from %s ***\n', allShapes(f).name);
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Step 1: Estimate Diffeomorphic Matching Parameters for Given Demonstrations %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -191,44 +198,44 @@ switch lin_ds_type
         lambda_1 = 5; lambda_2 = 5;
         A = -diag([lambda_1,lambda_2]);
         ds_type = 1;
-        ds_lin = @(x) lin_ds([0;0], x, ds_type, []);
     case 'tracking' % A_t tracking Linear DS 
-        xi_0 = target(:,1);
+        Y0 = source(1:2,:);
         y1 = 1;
-        y2 = -xi_0(1)/xi_0(2);
+        y2 = -Y0(1)/Y0(2);
         y = [y1;y2];
-        Q = [y./norm(y),xi_0./norm(xi_0)];
+        Q = [y./norm(y),Y0./norm(Y0)];
         L = [-20 0 ; 0 -1];
         A = Q*L*Q';  
         ds_type = 10;
-        ds_lin = @(x) lin_ds([0;0], x, ds_type, [], xi_0);
 end
-% Plot Original Dynamics
-% if exist('h_dyn','var'); delete(h_dyn);end
+
+
+if exist('h_dyn','var'); delete(h_dyn);end
 h_dyn  = figure( 'Color', [1 1 1]);
+% Plot Original Dynamics
 xlim(XLimPlot(1,:));
 ylim(XLimPlot(2,:));
-
-plot_ds_model(h_dyn, ds_lin, attractor, [xlim ylim]); hold on;
+ds_lin = @(x) lin_ds([0;0], x, ds_type, []);
+hs = plot_ds_model(h_dyn, ds_lin, attractor, [xlim ylim]); hold on;
 % Virtual Trajectory \chi
 scatter(source(1,:),source(2,:), 10, [0 0 1], 'filled'); hold on;
 % Attractor
 scatter(0, 0, 30, [0 0 0], '+'); hold on;
-title('Original DS $\dot{\xi}=A\xi$', 'Interpreter','LaTex', 'FontSize',15)
+title('Original DS $\dot{\xi}=A\xi$', 'Interpreter','LaTex')
 pause(1);
 
-% Plot Deformed Dynamics
-% if exist('h_dyn_diff','var'); delete(h_dyn_diff);end
+%% Plot Deformed Dynamics
+if exist('h_dyn_diff','var'); delete(h_dyn_diff);end
 h_dyn_diff  = figure( 'Color', [1 1 1]);
 xlim(XLimPlot(1,:));
 ylim(XLimPlot(2,:));
-hSL = my_plotBackwardStreamlines2D( h_dyn_diff, source, jac_inverse_diff_fun, [], A ); hold on;
+hSL = my_plotBackwardStreamlines2D( {gcf(), gca()}, source, jac_inverse_diff_fun, [], A ); hold on;
 set(hSL,'LineWidth',1)
 
 % THIS IS THE MAIN FUNCTION THAT SIMULATES THE DEFORMED DS
 % [phiX, X] = simulateFixedStep_Forward(source, jac_inverse_diff_fun, Xinit, optsSim{:});
 % Demonstrated Trajectory \xi
-scatter(target(1,:),target(2,:), 10, [1 0 0],'filled'); hold on;
+scatter(target(1,1,:),target(2,1,:), 10, [1 0 0],'filled'); hold on;
 % Attractor
 scatter(0, 0, 30, [0 0 0], '+'); hold on;
 title('Deformed DS $\dot{\xi} = A(\phi^{-1}(\xi))J_{\phi}(\phi^{-1}(\xi))\phi^{-1}(\xi) $','Interpreter','LaTex', 'FontSize',15);
